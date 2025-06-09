@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Московский Транспорт</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="mosmetro_logo_full.png" alt="Московский метрополитен" class="header-brand-logo">
+        </div>
+        <nav>
+            <a href="#" id="nav-main">Главная</a>
+            <a href="#" id="nav-posts">Посты</a>
+            <a href="#" id="nav-users">Пользователи</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Секция "Главная" (как на стр 1 PDF) -->
+        <section id="main-section" class="content-section">
+            <h2>Главная</h2>
+            <div class="profile-view">
+                <div class="profile-photo-placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="100px" height="100px"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <p>фото</p>
+                </div>
+                <div class="profile-info">
+                    <p><strong>ФИО:</strong> <span id="main-fio">[Данные пользователя]</span></p>
+                    <!-- Дополнительная информация может быть здесь -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Секция "Посты" (как на стр 2 PDF) -->
+        <section id="posts-section" class="content-section" style="display: none;">
+            <h2>Посты</h2>
+            <div class="controls">
+                <button id="show-create-post-form">Создать новый пост</button>
+            </div>
+            <div id="create-post-form-container" style="display:none; margin-bottom: 20px; padding:15px; border:1px solid #eee;">
+                <h3>Создать пост</h3>
+                <input type="text" id="post-title" placeholder="Заголовок поста" required><br><br>
+                <textarea id="post-content" placeholder="Содержание поста" rows="4" required></textarea><br><br>
+                <input type="number" id="post-owner-id" placeholder="ID Пользователя (владельца)" required><br><br>
+                <button id="submit-create-post">Сохранить пост</button>
+                <button id="cancel-create-post">Отмена</button>
+            </div>
+            <div id="posts-list">
+                <!-- Посты будут загружены сюда -->
+            </div>
+        </section>
+
+        <!-- Секция "Пользователи" (как на стр 3 PDF) -->
+        <section id="users-section" class="content-section" style="display: none;">
+            <h2>Пользователи</h2>
+             <div class="controls">
+                <button id="show-create-user-form">Создать нового пользователя</button>
+            </div>
+            <div id="create-user-form-container" style="display:none; margin-bottom: 20px; padding:15px; border:1px solid #eee;">
+                <h3>Создать пользователя</h3>
+                <input type="text" id="user-fio-create" placeholder="ФИО" required><br><br>
+                <input type="email" id="user-email-create" placeholder="Email" required><br><br>
+                <input type="text" id="user-address-create" placeholder="Адрес"><br><br>
+                <button id="submit-create-user">Сохранить пользователя</button>
+                <button id="cancel-create-user">Отмена</button>
+            </div>
+            <div id="users-list">
+                <!-- Пользователи будут загружены сюда -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Модальное окно для деталей пользователя (как на стр 4 PDF) -->
+    <div id="user-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button" id="close-modal-button">×</span>
+            <h3>ЛИЧНАЯ КАРТОЧКА</h3>
+            <form id="user-details-form">
+                <input type="hidden" id="modal-user-id">
+                <p><strong>ФИО:</strong> <input type="text" id="modal-user-fio" readonly></p>
+                <p><strong>Email:</strong> <input type="email" id="modal-user-email" readonly></p>
+                <p><strong>Адрес:</strong> <input type="text" id="modal-user-address" readonly></p>
+                <button type="button" id="edit-user-button">Редактировать</button>
+                <button type="submit" id="save-user-button" style="display:none;">Сохранить</button>
+                <button type="button" id="cancel-edit-button" style="display:none;">Отмена</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <img src="mosmetro_logo_full.png" alt="Московский Метрополитен" class="footer-brand-logo">
+        <span>ГУП Московский метрополитен</span>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

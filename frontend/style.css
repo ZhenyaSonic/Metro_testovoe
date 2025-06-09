@@ -1,0 +1,255 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    display: grid; /* Используем Grid для лучшего контроля */
+    grid-template-columns: auto 1fr; /* Первая колонка под лого, вторая займет остальное место */
+    align-items: center;
+    background-color: #fff;
+    padding: 15px 30px;
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    grid-column: 1;
+}
+.header-brand-logo { /* Новый логотип в хедере */
+    height: 40px; /* Вы можете настроить высоту по желанию */
+    /* width: auto; /* По умолчанию, для сохранения пропорций */
+}
+
+nav {
+    grid-column: 2; /* Навигация во второй колонке */
+    text-align: center; /* Центрируем содержимое (ссылки) внутри nav */
+}
+
+nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #555;
+    font-weight: bold;
+    padding-bottom: 5px;
+}
+
+nav a.active {
+    color: #d32f2f; /* Красный цвет для активной вкладки */
+    border-bottom: 2px solid #d32f2f;
+}
+
+main {
+    flex: 1;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 20px auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    position: relative; /* Для позиционирования скроллбара */
+    overflow-y: auto; /* Добавляем скроллбар, если контент выходит за пределы */
+    max-height: calc(100vh - 180px); /* Примерная высота, чтобы футер был виден */
+}
+
+
+.content-section h2 {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Стилизация блоков как в PDF */
+.list-item {
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.list-item-info strong {
+    display: block;
+    color: #777;
+    font-size: 0.9em;
+    margin-bottom: 3px;
+}
+.list-item-info span {
+    font-size: 1em;
+}
+
+.user-item-fio {
+    cursor: pointer;
+    color: #007bff;
+    text-decoration: underline;
+}
+
+.user-item-actions button, .post-item-actions button {
+    margin-left: 5px;
+    padding: 5px 8px;
+    font-size: 0.8em;
+}
+
+/* Стили для "Главной" страницы */
+.profile-view {
+    display: flex;
+    align-items: flex-start; /* Выравнивание по верху */
+    gap: 20px;
+}
+.profile-photo-placeholder {
+    width: 150px;
+    height: 150px;
+    background-color: #e0e0e0;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #757575;
+}
+.profile-photo-placeholder svg {
+    width: 60%;
+    height: 60%;
+    opacity: 0.7;
+}
+.profile-info p {
+    font-size: 1.2em;
+}
+
+
+/* Модальное окно */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    display: flex; /* Для центрирования */
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: auto; /* Удалено, так как flex используется для центрирования */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+}
+.modal-content h3 {
+    text-align: center;
+    margin-top: 0;
+    color: #333;
+    font-size: 1.2em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+.modal-content p {
+    margin-bottom: 10px;
+}
+.modal-content input[type="text"], .modal-content input[type="email"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.modal-content input:read-only {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+}
+.modal-content button {
+    padding: 10px 15px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+#save-user-button, #submit-create-post, #submit-create-user {
+    background-color: #4CAF50;
+    color: white;
+}
+#edit-user-button, #cancel-edit-button, #cancel-create-post, #cancel-create-user {
+    background-color: #f0f0f0;
+    color: #333;
+    margin-left: 5px;
+}
+
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.footer-brand-logo {
+    height: 40px; /* Настройте высоту по вашему вкусу */
+    display: block; /* Чтобы margin auto работал, если нужно будет центрировать */
+}
+
+/* Обновленный стиль для footer для лучшего выравнивания с новым логотипом */
+footer {
+    background-color: #f0f0f0;
+    color: #666;
+    padding: 15px 30px;
+    border-top: 1px solid #ddd;
+    font-size: 0.9em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Стили для кнопок и форм создания */
+.controls {
+    margin-bottom: 15px;
+}
+.controls button, #create-post-form-container button, #create-user-form-container button {
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.controls button:hover, #create-post-form-container button:hover, #create-user-form-container button:hover {
+    background-color: #0056b3;
+}
+#create-post-form-container input, #create-post-form-container textarea,
+#create-user-form-container input {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
