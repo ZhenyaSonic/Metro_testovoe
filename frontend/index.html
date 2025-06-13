@@ -28,12 +28,20 @@
             <h2 id="main-header">Добро пожаловать!</h2>
             <div id="profile-view-container" class="profile-view" style="display: none;">
                 <div class="profile-photo-placeholder">
-                    <img id="main-avatar" src="" alt="Аватар" style="width:150px; height:150px; border-radius:50%; object-fit: cover;">
+                    <img id="main-avatar" src="" alt="Аватар" style="width:150px; height:150px; border-radius:50%; object-fit: cover; border: 2px solid #eee;">
+                    <!-- ФОРМА ДЛЯ ЗАГРУЗКИ АВАТАРА -->
+                    <form id="avatar-upload-form" style="margin-top: 10px;">
+                        <input type="file" id="avatar-upload-input" accept="image/*" style="display: none;">
+                        <button type="button" id="change-avatar-btn">Сменить фото</button>
+                        <button type="submit" id="save-avatar-btn" style="display: none;">Сохранить</button>
+                    </form>
                 </div>
                 <div class="profile-info">
                     <p><strong>ФИО:</strong> <span id="main-fio">[Данные пользователя]</span></p>
                     <p><strong>Email:</strong> <span id="main-email"></span></p>
                     <p><strong>Адрес:</strong> <span id="main-address"></span></p>
+                    <!-- КНОПКА РЕДАКТИРОВАНИЯ ПРОФИЛЯ -->
+                    <button id="edit-profile-btn" style="margin-top: 15px;">Редактировать профиль</button>
                 </div>
             </div>
             <p id="welcome-message">Для начала работы, пожалуйста, <a href="#" id="login-link">войдите в систему</a> или <a href="#" id="register-link">зарегистрируйтесь</a>.</p>
@@ -76,6 +84,36 @@
         </section>
     </main>
     
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ ПРОФИЛЯ -->
+    <div id="edit-post-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button" id="close-edit-post-modal-btn">×</span>
+            <h3>Редактирование поста</h3>
+            <form id="edit-post-form">
+                <input type="hidden" id="edit-post-id">
+                <p><strong>Заголовок:</strong> <input type="text" id="edit-post-title" required></p>
+                <p><strong>Содержание:</strong></p>
+                <textarea id="edit-post-content" rows="5" required style="width: 95%;"></textarea>
+                <button type="submit">Сохранить изменения</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ ПОСТА -->
+    <div id="edit-post-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button" id="close-edit-post-modal-btn">×</span>
+            <h3>Редактирование поста</h3>
+            <form id="edit-post-form">
+                <input type="hidden" id="edit-post-id">
+                <p><strong>Заголовок:</strong> <input type="text" id="edit-post-title" required></p>
+                <p><strong>Содержание:</strong></p>
+                <textarea id="edit-post-content" rows="5" required style="width: 95%;"></textarea>
+                <button type="submit">Сохранить изменения</button>
+            </form>
+        </div>
+    </div>
+
     <div id="login-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <span class="close-button" id="close-login-modal-button">×</span>

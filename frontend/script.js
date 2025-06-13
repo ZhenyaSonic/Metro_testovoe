@@ -60,6 +60,30 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const usersList = document.getElementById('users-list');
 
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    const editProfileModal = {
+        element: document.getElementById('edit-profile-modal'),
+        closeBtn: document.getElementById('close-edit-profile-modal-btn'),
+        form: document.getElementById('edit-profile-form'),
+        fioInput: document.getElementById('edit-fio'),
+        emailInput: document.getElementById('edit-email'),
+        addressInput: document.getElementById('edit-address'),
+    };
+    const editPostModal = {
+        element: document.getElementById('edit-post-modal'),
+        closeBtn: document.getElementById('close-edit-post-modal-btn'),
+        form: document.getElementById('edit-post-form'),
+        idInput: document.getElementById('edit-post-id'),
+        titleInput: document.getElementById('edit-post-title'),
+        contentInput: document.getElementById('edit-post-content'),
+    };
+    const avatarForm = {
+        form: document.getElementById('avatar-upload-form'),
+        input: document.getElementById('avatar-upload-input'),
+        changeBtn: document.getElementById('change-avatar-btn'),
+        saveBtn: document.getElementById('save-avatar-btn'),
+    };
+
     // --- Global State ---
     let currentUser = null;
 
@@ -133,6 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
         mainPage.profileView.style.display = loggedIn ? 'flex' : 'none';
         mainPage.welcomeMessage.style.display = loggedIn ? 'none' : 'block';
         
+        editProfileBtn.style.display = loggedIn ? 'inline-block' : 'none';
+        avatarForm.form.style.display = loggedIn ? 'inline-block' : 'none';
+
         if (loggedIn) {
             mainPage.header.textContent = `Личный кабинет`;
             mainPage.fio.textContent = currentUser.fio;
@@ -169,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>`;
                     postsList.appendChild(postElement);
                 });
+                addPostActionListeners();
             }
         } catch (error) {
             console.error("Ошибка при загрузке постов:", error);
@@ -176,34 +204,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function addPostActionListeners() {
+        document.querySelectorAll('.edit-post-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const postId = e.target.dataset.id;
+                // Загружаем данные поста для редактирования
+                const response = await fetchWithAuth(`/api/posts/${postId}`);
+                if (!response.ok) {
+                    alert('Не удалось загрузить данные поста.');
+                    return;
+                }
+                const post = await response.json();
+                
+                // Заполняем модальное окно
+                editPostModal.idInput.value = post.id;
+                editPostModal.titleInput.value = post.title;
+                editPostModal.contentInput.value = post.content;
+                editPostModal.element.style.display = 'flex';
+            });
+        });
+
+        document.querySelectorAll('.delete-post-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const postId = e.target.dataset.id;
+                if (confirm('Вы уверены, что хотите удалить этот пост?')) {
+                    const response = await fetchWithAuth(`/api/posts/${postId}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        alert('Пост удален.');
+                        fetchAndDisplayPosts();
+                    } else {
+                        alert('Не удалось удалить пост.');
+                    }
+                }
+            });
+        });
+    }
+
     // --- Main Logic ---
     async function fetchAndDisplayUsers() {
-       try {
+        try {
             const response = await fetch(`${API_BASE_URL}/api/users/`);
             if (!response.ok) throw new Error('Не удалось загрузить пользователей.');
             const users = await response.json();
+            const usersList = document.getElementById('users-list');
             usersList.innerHTML = '';
             users.forEach(user => {
                 const userElement = document.createElement('div');
                 userElement.classList.add('list-item');
-                userElement.innerHTML = `
-                    <div style="display:flex; align-items:center; gap: 15px;">
-                        <img src="${user.avatar_url ? API_BASE_URL + user.avatar_url : DEFAULT_AVATAR}" alt="avatar" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
-                        <div class="list-item-info">
-                            <strong>ФИО:</strong> <span class="user-item-fio" data-id="${user.id}" style="cursor:pointer; color:blue;">${user.fio}</span><br>
-                            <strong>Email:</strong> <span>${user.email}</span>
-                        </div>
-                    </div>
-                    <div class="user-item-actions">
-                         <button data-id="${user.id}" class="delete-user-btn">Удалить</button>
-                    </div>`;
+                userElement.innerHTML = `...`; // Ваш код для отображения пользователя
                 usersList.appendChild(userElement);
             });
-       } catch (error) {
-           console.error('Ошибка при загрузке пользователей:', error);
-           usersList.innerHTML = '<p>Не удалось загрузить список пользователей.</p>';
-       }
+       } catch (error) { console.error('Ошибка:', error); }
     }
+    function showRegistration() { navigateTo('users'); /* ... */ }
 
     function showRegistration() {
         navigateTo('users');
@@ -308,6 +361,100 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error("Ошибка при создании поста:", error);
                 alert(`Не удалось создать пост: ${error.message}`);
+            }
+        });
+        editProfileBtn.addEventListener('click', () => {
+            if (!currentUser) return;
+            editProfileModal.fioInput.value = currentUser.fio;
+            editProfileModal.emailInput.value = currentUser.email;
+            editProfileModal.addressInput.value = currentUser.address || '';
+            editProfileModal.element.style.display = 'flex';
+        });
+
+        editProfileModal.closeBtn.addEventListener('click', () => {
+            editProfileModal.element.style.display = 'none';
+        });
+
+        editProfileModal.form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updatedData = {
+                fio: editProfileModal.fioInput.value.trim(),
+                email: editProfileModal.emailInput.value.trim(),
+                address: editProfileModal.addressInput.value.trim() || null,
+            };
+            try {
+                const response = await fetchWithAuth(`/api/users/${currentUser.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(updatedData),
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail);
+                }
+                alert('Профиль успешно обновлен!');
+                editProfileModal.element.style.display = 'none';
+                await initializeApp(); // Перезагружаем данные пользователя
+            } catch (error) {
+                alert(`Ошибка обновления: ${error.message}`);
+            }
+        });
+
+        // Редактирование поста
+        editPostModal.closeBtn.addEventListener('click', () => {
+            editPostModal.element.style.display = 'none';
+        });
+
+        editPostModal.form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const postId = editPostModal.idInput.value;
+            const updatedData = {
+                title: editPostModal.titleInput.value.trim(),
+                content: editPostModal.contentInput.value.trim(),
+            };
+            try {
+                const response = await fetchWithAuth(`/api/posts/${postId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(updatedData),
+                });
+                if (!response.ok) throw new Error('Не удалось обновить пост.');
+                alert('Пост успешно обновлен!');
+                editPostModal.element.style.display = 'none';
+                fetchAndDisplayPosts(); // Обновляем список постов
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+        // Загрузка аватара
+        avatarForm.changeBtn.addEventListener('click', () => {
+            avatarForm.input.click(); // Открываем диалог выбора файла
+        });
+
+        avatarForm.input.addEventListener('change', () => {
+            if (avatarForm.input.files.length > 0) {
+                avatarForm.saveBtn.style.display = 'inline-block';
+            }
+        });
+
+        avatarForm.form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (avatarForm.input.files.length === 0) return;
+
+            const formData = new FormData();
+            formData.append('file', avatarForm.input.files[0]);
+            
+            try {
+                const response = await fetchWithAuth('/api/users/me/avatar', {
+                    method: 'PUT',
+                    body: formData, // fetchWithAuth сам НЕ ставит Content-Type для FormData
+                });
+                if (!response.ok) throw new Error('Не удалось загрузить аватар.');
+                alert('Аватар успешно обновлен!');
+                avatarForm.input.value = ''; // Сбрасываем input
+                avatarForm.saveBtn.style.display = 'none';
+                await initializeApp(); // Перезагружаем данные пользователя
+            } catch (error) {
+                alert(error.message);
             }
         });
     }
