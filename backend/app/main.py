@@ -1,38 +1,62 @@
-# app/main.py
-from fastapi import FastAPI
-from . import models
-from .database import engine
-from .routers import users, posts
-from fastapi.middleware.cors import CORSMiddleware # <--- Добавить
+from datetime import timedelta
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
+
+from . import auth, crud, models, schemas
+from .database import engine, get_db
+from .routers import posts, users
 
 models.Base.metadata.create_all(bind=engine)
 
+
 app = FastAPI(
     title="Московский Транспорт API",
-    description="Тестовое задание - Бэкенд API",
-    version="0.1.0"
+    openapi_url="/api/openapi.json",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc"
 )
 
-
-origins = [
-    "http://localhost",  # Если вы будете использовать локальный сервер для фронтенда
-    "http://127.0.0.1",  # Для доступа с этого же IP
-    "null",  # Для разрешения запросов от file:/// (для локальной разработки)
-    # "http://your-frontend-domain.com", # Если будете деплоить фронтенд
-]
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Разрешенные источники
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Разрешить все методы (GET, POST, PUT, DELETE и т.д.)
-    allow_headers=["*"],  # Разрешить все заголовки
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-app.include_router(users.router)
-app.include_router(posts.router)
+
+# Роутер для токена (логина)
+@app.post("/api/token", response_model=schemas.Token, tags=["auth"])
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    user = crud.get_user_by_email(db, email=form_data.username)
+    if not user or not auth.verify_password(
+        form_data.password,
+        user.hashed_password
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# Подключаем роутеры с префиксом /api
+app.include_router(users.router, prefix="/api")
+app.include_router(posts.router, prefix="/api")
 
 
-@app.get("/")
+@app.get("/api", tags=["root"])
 async def root():
-    return {"message": "Welcome to the Московский Транспорт API. Visit /docs for API documentation."}
+    return {"message": "Welcome to the Московский Транспорт API."}

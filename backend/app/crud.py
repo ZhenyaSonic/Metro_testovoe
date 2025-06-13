@@ -1,6 +1,7 @@
 # app/crud.py
 from sqlalchemy.orm import Session
 from . import models, schemas
+from .auth import get_password_hash
 
 
 # --- User CRUD ---
@@ -17,7 +18,14 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_user(db: Session, user: schemas.UserCreate):
-    db_user = models.User(fio=user.fio, email=user.email, address=user.address)
+    # Хешируем пароль перед сохранением
+    hashed_password = get_password_hash(user.password)
+    db_user = models.User(
+        fio=user.fio,
+        email=user.email,
+        address=user.address,
+        hashed_password=hashed_password
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

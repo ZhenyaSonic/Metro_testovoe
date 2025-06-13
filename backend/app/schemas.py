@@ -3,6 +3,16 @@ from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 
 
+# --- Token Schemas ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+
 # --- Post Schemas ---
 class PostBase(BaseModel):
     title: str
@@ -23,7 +33,7 @@ class Post(PostBase):
     owner_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # --- User Schemas ---
@@ -34,7 +44,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    pass
+    password: str
 
 
 class UserUpdate(BaseModel):
@@ -45,7 +55,8 @@ class UserUpdate(BaseModel):
 
 class User(UserBase):
     id: int
+    avatar_url: Optional[str] = None
     posts: List[Post] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True

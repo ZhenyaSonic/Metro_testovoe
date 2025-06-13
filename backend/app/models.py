@@ -10,13 +10,14 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     fio = Column(String, index=True)
     email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
     address = Column(String, nullable=True)
+    avatar_url = Column(String, nullable=True)
 
     posts = relationship(
         "Post",
         back_populates="owner",
-        cascade="all,"
-        "delete-orphan"
+        cascade="all, delete-orphan"
     )
 
 
@@ -25,7 +26,7 @@ class Post(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
-    content = Column(String)  # добавление каждого поста
+    content = Column(String)
     owner_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="posts")
