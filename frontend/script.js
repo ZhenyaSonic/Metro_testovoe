@@ -1,361 +1,336 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'http://127.0.0.1:8000'; // URL вашего FastAPI бэкенда
+    // API_BASE_URL пустой, так как все запросы идут на тот же хост, что и фронтенд
+    const API_BASE_URL = ''; 
+    const DEFAULT_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iY3VycmVudENvbG9yIiB3aWR0aD0iMTAwcHgiIGhlaWdodD0iMTAwcHgiPjxwYXRoIGQ9Ik0xMiAxMmMyLjIxIDAgNC0xLjc5IDQtNHMtMS43OS00LTQtNC00IDEuNzktNCA0IDEuNzkgNCA0IDR6bTAgMmMtMi42NyAwLTggMS4zNC04IDR2MmgxNnYtMmMwLTIuNjYtNS4zMy00LTgtNHoiLz48L3N2Zz4=';
 
-    const navMain = document.getElementById('nav-main');
-    const navPosts = document.getElementById('nav-posts');
-    const navUsers = document.getElementById('nav-users');
-
-    const mainSection = document.getElementById('main-section');
-    const postsSection = document.getElementById('posts-section');
-    const usersSection = document.getElementById('users-section');
-
+    // --- DOM Elements ---
+    const navs = {
+        main: document.getElementById('nav-main'),
+        posts: document.getElementById('nav-posts'),
+        users: document.getElementById('nav-users'),
+    };
+    const authButtons = {
+        login: document.getElementById('login-btn'),
+        register: document.getElementById('register-btn'),
+        logout: document.getElementById('logout-btn'),
+    };
+    const links = {
+        login: document.getElementById('login-link'),
+        register: document.getElementById('register-link'),
+    };
+    const sections = {
+        main: document.getElementById('main-section'),
+        posts: document.getElementById('posts-section'),
+        users: document.getElementById('users-section'),
+    };
+    const mainPage = {
+        header: document.getElementById('main-header'),
+        profileView: document.getElementById('profile-view-container'),
+        welcomeMessage: document.getElementById('welcome-message'),
+        avatar: document.getElementById('main-avatar'),
+        fio: document.getElementById('main-fio'),
+        email: document.getElementById('main-email'),
+        address: document.getElementById('main-address'),
+    };
+    const loginModal = {
+        element: document.getElementById('login-modal'),
+        closeBtn: document.getElementById('close-login-modal-button'),
+        form: document.getElementById('login-form'),
+        emailInput: document.getElementById('login-email'),
+        passwordInput: document.getElementById('login-password'),
+    };
+    const registerForm = {
+        container: document.getElementById('register-form-container'),
+        showBtn: document.getElementById('show-register-form-btn'),
+        submitBtn: document.getElementById('submit-register-user'),
+        cancelBtn: document.getElementById('cancel-register-user'),
+        fioInput: document.getElementById('user-fio-create'),
+        emailInput: document.getElementById('user-email-create'),
+        passwordInput: document.getElementById('user-password-create'),
+        addressInput: document.getElementById('user-address-create'),
+    };
     const postsList = document.getElementById('posts-list');
+    const createPostForm = {
+        container: document.getElementById('create-post-form-container'),
+        showBtn: document.getElementById('show-create-post-form'),
+        submitBtn: document.getElementById('submit-create-post'),
+        cancelBtn: document.getElementById('cancel-create-post'),
+        titleInput: document.getElementById('post-title'),
+        contentInput: document.getElementById('post-content'),
+    };
     const usersList = document.getElementById('users-list');
 
-    // Модальное окно пользователя
-    const userModal = document.getElementById('user-modal');
-    const closeModalButton = document.getElementById('close-modal-button');
-    const modalUserId = document.getElementById('modal-user-id');
-    const modalUserFio = document.getElementById('modal-user-fio');
-    const modalUserEmail = document.getElementById('modal-user-email');
-    const modalUserAddress = document.getElementById('modal-user-address');
-    const userDetailsForm = document.getElementById('user-details-form');
-    const editUserButton = document.getElementById('edit-user-button');
-    const saveUserButton = document.getElementById('save-user-button');
-    const cancelEditButton = document.getElementById('cancel-edit-button');
+    // --- Global State ---
+    let currentUser = null;
 
+    // --- API & Auth Helpers ---
+    const getToken = () => localStorage.getItem('accessToken');
 
-    // Формы создания
-    const showCreatePostFormButton = document.getElementById('show-create-post-form');
-    const createPostFormContainer = document.getElementById('create-post-form-container');
-    const postTitleInput = document.getElementById('post-title');
-    const postContentInput = document.getElementById('post-content');
-    const postOwnerIdInput = document.getElementById('post-owner-id');
-    const submitCreatePostButton = document.getElementById('submit-create-post');
-    const cancelCreatePostButton = document.getElementById('cancel-create-post');
+    async function fetchWithAuth(url, options = {}) {
+        const token = getToken();
+        const headers = { ...options.headers };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
 
-    const showCreateUserFormButton = document.getElementById('show-create-user-form');
-    const createUserFormContainer = document.getElementById('create-user-form-container');
-    const userFioCreateInput = document.getElementById('user-fio-create');
-    const userEmailCreateInput = document.getElementById('user-email-create');
-    const userAddressCreateInput = document.getElementById('user-address-create');
-    const submitCreateUserButton = document.getElementById('submit-create-user');
-    const cancelCreateUserButton = document.getElementById('cancel-create-user');
-
-
-    function setActiveNav(activeLink) {
-        [navMain, navPosts, navUsers].forEach(link => link.classList.remove('active'));
-        activeLink.classList.add('active');
+        const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers });
+        if (response.status === 401) {
+            handleLogout();
+            alert("Сессия истекла. Пожалуйста, войдите снова.");
+            throw new Error("Unauthorized");
+        }
+        return response;
     }
 
-    function showSection(sectionToShow) {
-        [mainSection, postsSection, usersSection].forEach(section => section.style.display = 'none');
-        sectionToShow.style.display = 'block';
+    async function handleLogin(email, password) {
+        console.log(`[LOGIN] Attempting to login with email: ${email}`);
+        try {
+            const formData = new URLSearchParams({ username: email, password: password });
+            const response = await fetch(`${API_BASE_URL}/api/token`, { method: 'POST', body: formData });
+            
+            console.log(`[LOGIN] Response status: ${response.status}`);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`[LOGIN] Login failed. Status: ${response.status}, Body: ${errorText}`);
+                throw new Error('Неверный email или пароль.');
+            }
+
+            const data = await response.json();
+            console.log("[LOGIN] Token received:", data.access_token);
+
+            localStorage.setItem('accessToken', data.access_token);
+            loginModal.element.style.display = 'none';
+            loginModal.form.reset();
+            
+            console.log("[LOGIN] Token stored. Initializing app...");
+            await initializeApp();
+            console.log("[LOGIN] App re-initialized successfully.");
+
+        } catch (error) {
+            console.error('[LOGIN] Error during login process:', error);
+            alert(error.message);
+        }
+    }
+
+    function handleLogout() {
+        localStorage.removeItem('accessToken');
+        currentUser = null;
+        updateUI();
+        navigateTo('main');
+    }
+
+    // --- UI Update ---
+    function updateUI() {
+        const loggedIn = !!currentUser;
+        authButtons.login.style.display = loggedIn ? 'none' : 'inline-block';
+        authButtons.register.style.display = loggedIn ? 'none' : 'inline-block';
+        authButtons.logout.style.display = loggedIn ? 'inline-block' : 'none';
+
+        if (createPostForm.showBtn) {
+            createPostForm.showBtn.style.display = loggedIn ? 'inline-block' : 'none';
+        }
+
+        mainPage.profileView.style.display = loggedIn ? 'flex' : 'none';
+        mainPage.welcomeMessage.style.display = loggedIn ? 'none' : 'block';
+        
+        if (loggedIn) {
+            mainPage.header.textContent = `Личный кабинет`;
+            mainPage.fio.textContent = currentUser.fio;
+            mainPage.email.textContent = currentUser.email;
+            mainPage.address.textContent = currentUser.address || 'Не указан';
+            mainPage.avatar.src = currentUser.avatar_url ? `${API_BASE_URL}${currentUser.avatar_url}` : DEFAULT_AVATAR;
+        } else {
+            mainPage.header.textContent = `Добро пожаловать!`;
+        }
     }
 
     async function fetchAndDisplayPosts() {
         try {
-            const response = await fetch(`${API_BASE_URL}/posts/`);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            // Список постов может смотреть любой,
+            const response = await fetch(`${API_BASE_URL}/api/posts/`);
+            if (!response.ok) throw new Error('Не удалось загрузить посты.');
             const posts = await response.json();
-            postsList.innerHTML = ''; // Очистить список
-            posts.forEach(post => {
-                const postElement = document.createElement('div');
-                postElement.classList.add('list-item');
-                postElement.innerHTML = `
-                    <div class="list-item-info">
-                        <strong>Информация:</strong>
-                        <span>${post.title}</span>
-                        <p style="font-size:0.9em; color:#555;">${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}</p>
-                        <small>ID поста: ${post.id}, ID Владельца: ${post.owner_id}</small>
-                    </div>
-                    <div class="post-item-actions">
-                        <button data-id="${post.id}" class="delete-post-btn">Удалить</button>
-                    </div>
-                `;
-                postsList.appendChild(postElement);
-            });
-            addDeletePostEventListeners();
+            postsList.innerHTML = '';
+            if (posts.length === 0) {
+                postsList.innerHTML = '<p>Постов пока нет. Создайте первый!</p>';
+            } else {
+                posts.forEach(post => {
+                    const postElement = document.createElement('div');
+                    postElement.classList.add('list-item');
+                    postElement.innerHTML = `
+                        <div class="list-item-info">
+                            <strong>${post.title}</strong>
+                            <p style="font-size:0.9em; color:#555; margin-top: 5px;">${post.content}</p>
+                            <small>ID поста: ${post.id}, ID Владельца: ${post.owner_id}</small>
+                        </div>
+                        <div class="post-item-actions">
+                            <!-- Кнопку удаления покажем, только если пост принадлежит текущему пользователю -->
+                            ${currentUser && currentUser.id === post.owner_id ? `<button data-id="${post.id}" class="delete-post-btn">Удалить</button>` : ''}
+                        </div>`;
+                    postsList.appendChild(postElement);
+                });
+            }
         } catch (error) {
-            console.error('Ошибка при загрузке постов:', error);
-            postsList.innerHTML = '<p>Не удалось загрузить посты.</p>';
+            console.error("Ошибка при загрузке постов:", error);
+            postsList.innerHTML = '<p>Произошла ошибка при загрузке постов.</p>';
         }
     }
 
+    // --- Main Logic ---
     async function fetchAndDisplayUsers() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/`);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+       try {
+            const response = await fetch(`${API_BASE_URL}/api/users/`);
+            if (!response.ok) throw new Error('Не удалось загрузить пользователей.');
             const users = await response.json();
-            usersList.innerHTML = ''; // Очистить список
+            usersList.innerHTML = '';
             users.forEach(user => {
                 const userElement = document.createElement('div');
                 userElement.classList.add('list-item');
                 userElement.innerHTML = `
-                    <div class="list-item-info">
-                        <strong>ФИО:</strong> <span class="user-item-fio" data-id="${user.id}">${user.fio}</span><br>
-                        <strong>Email:</strong> <span>${user.email}</span>
+                    <div style="display:flex; align-items:center; gap: 15px;">
+                        <img src="${user.avatar_url ? API_BASE_URL + user.avatar_url : DEFAULT_AVATAR}" alt="avatar" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                        <div class="list-item-info">
+                            <strong>ФИО:</strong> <span class="user-item-fio" data-id="${user.id}" style="cursor:pointer; color:blue;">${user.fio}</span><br>
+                            <strong>Email:</strong> <span>${user.email}</span>
+                        </div>
                     </div>
                     <div class="user-item-actions">
-                        <button data-id="${user.id}" class="delete-user-btn">Удалить</button>
-                    </div>
-                `;
+                         <button data-id="${user.id}" class="delete-user-btn">Удалить</button>
+                    </div>`;
                 usersList.appendChild(userElement);
             });
-            addUserClickListeners();
-            addDeleteUserEventListeners();
-        } catch (error) {
-            console.error('Ошибка при загрузке пользователей:', error);
-            usersList.innerHTML = '<p>Не удалось загрузить пользователей.</p>';
-        }
+       } catch (error) {
+           console.error('Ошибка при загрузке пользователей:', error);
+           usersList.innerHTML = '<p>Не удалось загрузить список пользователей.</p>';
+       }
     }
 
-    function addUserClickListeners() {
-        document.querySelectorAll('.user-item-fio').forEach(item => {
-            item.addEventListener('click', async (event) => {
-                const userId = event.target.dataset.id;
-                await openUserModal(userId);
-            });
+    function showRegistration() {
+        navigateTo('users');
+        registerForm.container.style.display = 'block';
+        registerForm.showBtn.style.display = 'none';
+    }
+    
+    // --- Navigation ---
+    function navigateTo(sectionName) {
+        Object.values(navs).forEach(nav => nav.classList.remove('active'));
+        navs[sectionName].classList.add('active');
+        Object.values(sections).forEach(section => section.style.display = 'none');
+        sections[sectionName].style.display = 'block';
+    }
+
+    // --- Event Listeners ---
+    function setupEventListeners() {
+        authButtons.login.addEventListener('click', () => { loginModal.element.style.display = 'flex'; });
+        authButtons.register.addEventListener('click', showRegistration);
+        links.login.addEventListener('click', (e) => { e.preventDefault(); loginModal.element.style.display = 'flex'; });
+        links.register.addEventListener('click', (e) => { e.preventDefault(); showRegistration(); });
+        authButtons.logout.addEventListener('click', handleLogout);
+        loginModal.closeBtn.addEventListener('click', () => { loginModal.element.style.display = 'none'; });
+        loginModal.form.addEventListener('submit', (e) => { e.preventDefault(); handleLogin(loginModal.emailInput.value, loginModal.passwordInput.value); });
+
+        navs.main.addEventListener('click', (e) => { e.preventDefault(); navigateTo('main'); });
+        navs.users.addEventListener('click', (e) => { e.preventDefault(); navigateTo('users'); fetchAndDisplayUsers(); });
+        navs.posts.addEventListener('click', (e) => { e.preventDefault(); navigateTo('posts'); fetchAndDisplayPosts(); });
+        
+        registerForm.showBtn.addEventListener('click', () => {
+            registerForm.container.style.display = 'block';
+            registerForm.showBtn.style.display = 'none';
         });
-    }
-    
-    function setModalFieldsEditable(isEditable) {
-        modalUserFio.readOnly = !isEditable;
-        modalUserEmail.readOnly = !isEditable;
-        modalUserAddress.readOnly = !isEditable;
-        saveUserButton.style.display = isEditable ? 'inline-block' : 'none';
-        editUserButton.style.display = isEditable ? 'none' : 'inline-block';
-        cancelEditButton.style.display = isEditable ? 'inline-block' : 'none';
-    }
-
-    async function openUserModal(userId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/${userId}`);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const user = await response.json();
-            
-            modalUserId.value = user.id;
-            modalUserFio.value = user.fio;
-            modalUserEmail.value = user.email;
-            modalUserAddress.value = user.address || '';
-            
-            setModalFieldsEditable(false); // По умолчанию поля нередактируемы
-            userModal.style.display = 'flex';
-        } catch (error) {
-            console.error('Ошибка при загрузке данных пользователя:', error);
-            alert('Не удалось загрузить данные пользователя.');
-        }
-    }
-    
-    editUserButton.addEventListener('click', () => {
-        setModalFieldsEditable(true);
-    });
-
-    cancelEditButton.addEventListener('click', async () => {
-        // Перезагружаем данные пользователя, чтобы отменить изменения
-        const userId = modalUserId.value;
-        if (userId) {
-            await openUserModal(userId); // Это сбросит поля к исходным значениям и заблокирует их
-        }
-        setModalFieldsEditable(false);
-    });
-
-    closeModalButton.addEventListener('click', () => {
-        userModal.style.display = 'none';
-    });
-
-    window.addEventListener('click', (event) => { // Закрытие по клику вне модалки
-        if (event.target === userModal) {
-            userModal.style.display = 'none';
-        }
-    });
-
-    userDetailsForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const userId = modalUserId.value;
-        const updatedUser = {
-            fio: modalUserFio.value,
-            email: modalUserEmail.value,
-            address: modalUserAddress.value || null
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedUser)
-            });
-            if (!response.ok) {
-                 const errorData = await response.json();
-                 throw new Error(`HTTP error! status: ${response.status}, ${errorData.detail}`);
+        registerForm.cancelBtn.addEventListener('click', () => {
+            registerForm.container.style.display = 'none';
+            registerForm.showBtn.style.display = 'inline-block';
+            registerForm.fioInput.value = ''; registerForm.emailInput.value = ''; registerForm.passwordInput.value = ''; registerForm.addressInput.value = '';
+        });
+        registerForm.submitBtn.addEventListener('click', async () => {
+            const userData = {
+                fio: registerForm.fioInput.value.trim(),
+                email: registerForm.emailInput.value.trim(),
+                password: registerForm.passwordInput.value.trim(),
+                address: registerForm.addressInput.value.trim() || null
+            };
+            if (!userData.fio || !userData.email || !userData.password) {
+                alert('Пожалуйста, заполните ФИО, Email и Пароль.');
+                return;
             }
-            alert('Данные пользователя обновлены!');
-            userModal.style.display = 'none';
-            fetchAndDisplayUsers(); // Обновить список пользователей
-        } catch (error) {
-            console.error('Ошибка при обновлении пользователя:', error);
-            alert(`Не удалось обновить данные пользователя: ${error.message}`);
-        }
-    });
-
-    // Обработчики для создания постов
-    showCreatePostFormButton.addEventListener('click', () => {
-        createPostFormContainer.style.display = 'block';
-        showCreatePostFormButton.style.display = 'none';
-    });
-    cancelCreatePostButton.addEventListener('click', () => {
-        createPostFormContainer.style.display = 'none';
-        showCreatePostFormButton.style.display = 'inline-block';
-        postTitleInput.value = '';
-        postContentInput.value = '';
-        postOwnerIdInput.value = '';
-    });
-    submitCreatePostButton.addEventListener('click', async () => {
-        const title = postTitleInput.value.trim();
-        const content = postContentInput.value.trim();
-        const ownerId = parseInt(postOwnerIdInput.value.trim(), 10);
-
-        if (!title || !content || isNaN(ownerId)) {
-            alert('Пожалуйста, заполните все поля и укажите корректный ID пользователя.');
-            return;
-        }
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/${ownerId}/posts/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, content })
-            });
-            if (!response.ok) {
-                 const errorData = await response.json();
-                 throw new Error(`HTTP error! status: ${response.status}, ${errorData.detail}`);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/users/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
+                 if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.detail); }
+                alert('Пользователь успешно создан! Теперь вы можете войти.');
+                registerForm.cancelBtn.click();
+                fetchAndDisplayUsers();
+            } catch (error) {
+                console.error('Ошибка при создании пользователя:', error);
+                alert(`Не удалось создать пользователя: ${error.message}`);
             }
-            alert('Пост успешно создан!');
-            postTitleInput.value = '';
-            postContentInput.value = '';
-            postOwnerIdInput.value = '';
-            createPostFormContainer.style.display = 'none';
-            showCreatePostFormButton.style.display = 'inline-block';
-            fetchAndDisplayPosts();
-        } catch (error) {
-            console.error('Ошибка при создании поста:', error);
-            alert(`Не удалось создать пост: ${error.message}`);
-        }
-    });
-
-    // Обработчики для создания пользователей
-    showCreateUserFormButton.addEventListener('click', () => {
-        createUserFormContainer.style.display = 'block';
-        showCreateUserFormButton.style.display = 'none';
-    });
-    cancelCreateUserButton.addEventListener('click', () => {
-        createUserFormContainer.style.display = 'none';
-        showCreateUserFormButton.style.display = 'inline-block';
-        userFioCreateInput.value = '';
-        userEmailCreateInput.value = '';
-        userAddressCreateInput.value = '';
-    });
-    submitCreateUserButton.addEventListener('click', async () => {
-        const fio = userFioCreateInput.value.trim();
-        const email = userEmailCreateInput.value.trim();
-        const address = userAddressCreateInput.value.trim() || null;
-
-        if (!fio || !email) {
-            alert('Пожалуйста, заполните ФИО и Email.');
-            return;
-        }
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fio, email, address })
-            });
-             if (!response.ok) {
-                 const errorData = await response.json();
-                 throw new Error(`HTTP error! status: ${response.status}, ${errorData.detail}`);
+        });
+        createPostForm.showBtn.addEventListener('click', () => {
+            createPostForm.container.style.display = 'block';
+            createPostForm.showBtn.style.display = 'none';
+        });
+        createPostForm.cancelBtn.addEventListener('click', () => {
+            createPostForm.container.style.display = 'none';
+            createPostForm.showBtn.style.display = 'inline-block';
+            createPostForm.titleInput.value = '';
+            createPostForm.contentInput.value = '';
+        });
+        createPostForm.submitBtn.addEventListener('click', async () => {
+            if (!currentUser) {
+                alert('Для создания поста необходимо войти в систему.');
+                return;
             }
-            alert('Пользователь успешно создан!');
-            userFioCreateInput.value = '';
-            userEmailCreateInput.value = '';
-            userAddressCreateInput.value = '';
-            createUserFormContainer.style.display = 'none';
-            showCreateUserFormButton.style.display = 'inline-block';
-            fetchAndDisplayUsers();
-        } catch (error) {
-            console.error('Ошибка при создании пользователя:', error);
-            alert(`Не удалось создать пользователя: ${error.message}`);
-        }
-    });
-    
-    // Функции и обработчики для удаления
-    function addDeletePostEventListeners() {
-        document.querySelectorAll('.delete-post-btn').forEach(button => {
-            button.addEventListener('click', async (event) => {
-                const postId = event.target.dataset.id;
-                if (confirm(`Вы уверены, что хотите удалить пост ID ${postId}?`)) {
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/posts/${postId}`, { method: 'DELETE' });
-                        if (!response.ok) throw new Error('Не удалось удалить пост.');
-                        alert('Пост удален.');
-                        fetchAndDisplayPosts();
-                    } catch (error) {
-                        console.error('Ошибка при удалении поста:', error);
-                        alert(error.message);
-                    }
+            const postData = {
+                title: createPostForm.titleInput.value.trim(),
+                content: createPostForm.contentInput.value.trim(),
+            };
+            if (!postData.title || !postData.content) {
+                alert('Пожалуйста, заполните заголовок и содержание поста.');
+                return;
+            }
+            try {
+                // Используем fetchWithAuth, так как создание поста требует авторизации
+                // ID пользователя берем из currentUser
+                const response = await fetchWithAuth(`/api/users/${currentUser.id}/posts/`, {
+                    method: 'POST',
+                    body: JSON.stringify(postData)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail);
                 }
-            });
+                alert('Пост успешно создан!');
+                createPostForm.cancelBtn.click(); // Скрываем и очищаем форму
+                fetchAndDisplayPosts(); // Обновляем список постов
+            } catch (error) {
+                console.error("Ошибка при создании поста:", error);
+                alert(`Не удалось создать пост: ${error.message}`);
+            }
         });
     }
 
-    function addDeleteUserEventListeners() {
-        document.querySelectorAll('.delete-user-btn').forEach(button => {
-            button.addEventListener('click', async (event) => {
-                const userId = event.target.dataset.id;
-                if (confirm(`Вы уверены, что хотите удалить пользователя ID ${userId}? (Все его посты также будут удалены)`)) {
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/users/${userId}`, { method: 'DELETE' });
-                        if (!response.ok) throw new Error('Не удалось удалить пользователя.');
-                        alert('Пользователь удален.');
-                        fetchAndDisplayUsers();
-                        // Если открыта секция постов, тоже обновить, т.к. посты пользователя могли быть удалены
-                        if (postsSection.style.display === 'block') {
-                            fetchAndDisplayPosts();
-                        }
-                    } catch (error) {
-                        console.error('Ошибка при удалении пользователя:', error);
-                        alert(error.message);
-                    }
-                }
-            });
-        });
+    // --- App Initialization ---
+    async function initializeApp() {
+        const token = getToken();
+        if (token) {
+            try {
+                const response = await fetchWithAuth('/api/users/me');
+                 if (!response.ok) throw new Error(`Failed to fetch user. Status: ${response.status}`);
+                currentUser = await response.json();
+            } catch (error) {
+                console.error("Token validation failed:", error);
+                currentUser = null;
+            }
+        } else {
+            currentUser = null;
+        }
+        updateUI();
+        navigateTo('main');
     }
 
-
-    // Навигация
-    navMain.addEventListener('click', (e) => {
-        e.preventDefault();
-        setActiveNav(navMain);
-        showSection(mainSection);
-        // Здесь можно добавить логику для "Главной", если нужно (например, загрузка данных текущего пользователя)
-        document.getElementById('main-fio').textContent = "Пожалуйста, выберите пользователя или войдите в систему.";
-    });
-
-    navPosts.addEventListener('click', (e) => {
-        e.preventDefault();
-        setActiveNav(navPosts);
-        showSection(postsSection);
-        fetchAndDisplayPosts();
-    });
-
-    navUsers.addEventListener('click', (e) => {
-        e.preventDefault();
-        setActiveNav(navUsers);
-        showSection(usersSection);
-        fetchAndDisplayUsers();
-    });
-
-    // Инициализация: показать главную страницу по умолчанию
-    setActiveNav(navMain);
-    showSection(mainSection);
-    document.getElementById('main-fio').textContent = "Добро пожаловать!";
-
+    setupEventListeners();
+    initializeApp();
 });
