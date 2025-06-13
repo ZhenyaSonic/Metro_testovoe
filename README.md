@@ -59,7 +59,7 @@ test_task/
 
 1.  **Клонируйте репозиторий:**
     ```bash
-    git clone <your-repo-url>
+    git clone https://github.com/ZhenyaSonic/Metro_testovoe.git
     cd test_task
     ```
 
