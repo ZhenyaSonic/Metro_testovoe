@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // API_BASE_URL пустой, так как все запросы идут на тот же хост, что и фронтенд
     const API_BASE_URL = ''; 
     const DEFAULT_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iY3VycmVudENvbG9yIiB3aWR0aD0iMTAwcHgiIGhlaWdodD0iMTAwcHgiPjxwYXRoIGQ9Ik0xMiAxMmMyLjIxIDAgNC0xLjc5IDQtNHMtMS43OS00LTQtNC00IDEuNzktNCA0IDEuNzkgNCA0IDR6bTAgMmMtMi42NyAwLTggMS4zNC04IDR2MmgxNnYtMmMwLTIuNjYtNS4zMy00LTgtNHoiLz48L3N2Zz4=';
 
@@ -216,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const post = await response.json();
                 
-                // Заполняем модальное окно
                 editPostModal.idInput.value = post.id;
                 editPostModal.titleInput.value = post.title;
                 editPostModal.contentInput.value = post.content;
@@ -251,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
             users.forEach(user => {
                 const userElement = document.createElement('div');
                 userElement.classList.add('list-item');
-                userElement.innerHTML = `...`; // Ваш код для отображения пользователя
+                userElement.innerHTML = `...`;
                 usersList.appendChild(userElement);
             });
        } catch (error) { console.error('Ошибка:', error); }

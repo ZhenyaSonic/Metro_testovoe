@@ -36,8 +36,7 @@ def update_user(db: Session, user_id: int, user_update: schemas.UserUpdate):
     db_user = get_user(db, user_id)
     if not db_user:
         return None
-    update_data = user_update.model_dump(exclude_unset=True) # Pydantic V2
-    # update_data = user_update.dict(exclude_unset=True) # Pydantic V1
+    update_data = user_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_user, key, value)
     db.commit()
@@ -64,8 +63,7 @@ def get_posts(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_user_post(db: Session, post: schemas.PostCreate, user_id: int):
-    db_post = models.Post(**post.model_dump(), owner_id=user_id) # Pydantic V2
-    # db_post = models.Post(**post.dict(), owner_id=user_id) # Pydantic V1
+    db_post = models.Post(**post.model_dump(), owner_id=user_id)
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
@@ -76,8 +74,7 @@ def update_post(db: Session, post_id: int, post_update: schemas.PostUpdate):
     db_post = get_post(db, post_id)
     if not db_post:
         return None
-    update_data = post_update.model_dump(exclude_unset=True) # Pydantic V2
-    # update_data = post_update.dict(exclude_unset=True) # Pydantic V1
+    update_data = post_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_post, key, value)
     db.commit()

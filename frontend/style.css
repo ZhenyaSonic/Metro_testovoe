@@ -25,7 +25,7 @@ header {
     grid-column: 1;
 }
 .header-brand-logo { /* Новый логотип в хедере */
-    height: 40px; /* Вы можете настроить высоту по желанию */
+    height: 40px;
     /* width: auto; /* По умолчанию, для сохранения пропорций */
 }
 
@@ -68,7 +68,7 @@ main {
     color: #333;
 }
 
-/* Стилизация блоков как в PDF */
+/* Стилизация блоков */
 .list-item {
     background-color: #f9f9f9;
     border: 1px solid #eee;
@@ -139,14 +139,14 @@ main {
     height: 100%;
     overflow: auto;
     background-color: rgba(0,0,0,0.5);
-    display: flex; /* Для центрирования */
+    display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .modal-content {
     background-color: #fff;
-    margin: auto; /* Удалено, так как flex используется для центрирования */
+    margin: auto;
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
@@ -214,11 +214,10 @@ main {
 }
 
 .footer-brand-logo {
-    height: 40px; /* Настройте высоту по вашему вкусу */
-    display: block; /* Чтобы margin auto работал, если нужно будет центрировать */
+    height: 40px;
+    display: block;
 }
 
-/* Обновленный стиль для footer для лучшего выравнивания с новым логотипом */
 footer {
     background-color: #f0f0f0;
     color: #666;

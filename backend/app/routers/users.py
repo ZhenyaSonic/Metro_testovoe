@@ -22,8 +22,6 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 async def get_current_active_user(
     token: str = Depends(auth.oauth2_scheme), db: Session = Depends(get_db)
 ):
-    # Эта функция теперь живет здесь, она правильно получает все зависимости
-    # и вызывает вспомогательную функцию из auth.py
     return auth.get_user_from_token(token, db)
 
 
@@ -50,7 +48,6 @@ async def read_users_me(
     return current_user
 
 
-# Все остальные эндпоинты остаются без изменений...
 @router.get("/", response_model=List[schemas.User])
 def read_users_endpoint(
     skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
@@ -67,7 +64,6 @@ def read_user_endpoint(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
-# Используем нашу НОВУЮ, правильную зависимость
 @router.put("/me/avatar", response_model=schemas.User)
 async def upload_avatar(
     file: UploadFile = File(...),
